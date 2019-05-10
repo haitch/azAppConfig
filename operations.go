@@ -2,15 +2,15 @@ package azappconfig
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/Azure/go-autorest/autorest"
+	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/tracing"
 )
 
 // List all app configs
-func (client OperationsClient) ListKeys(ctx context.Context) (err error) {
+func (client OperationsClient) ListKeys(ctx context.Context) (result autorest.Response, err error) {
 	if tracing.IsEnabled() {
 		ctx = tracing.StartSpan(ctx, "ListKeys")
 		defer func() {
@@ -27,8 +27,19 @@ func (client OperationsClient) ListKeys(ctx context.Context) (err error) {
 		return
 	}
 
-	fmt.Printf(req.URL.String())
-	return nil
+	resp, err := client.sender(req)
+	if err != nil {
+		// result.olr.Response = autorest.Response{Response: resp}
+		err = autorest.NewErrorWithError(err, "azAppConfig.OperationsClient", "ListKeys", resp, "Failure sending request")
+		return
+	}
+
+	result, err = client.responder(resp)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "azAppConfig.OperationsClient", "ListKeys", resp, "Failure responding to request")
+	}
+
+	return
 }
 
 // preparer prepares the List request.
@@ -45,4 +56,17 @@ func (client OperationsClient) preparer(ctx context.Context) (*http.Request, err
 func (client OperationsClient) sender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client, req,
 		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+}
+
+// ListResponder handles the response to the List request. The method always
+// closes the http.Response Body.
+func (client OperationsClient) responder(resp *http.Response) (result autorest.Response, err error) {
+	err = autorest.Respond(
+		resp,
+		client.ByInspecting(),
+		azure.WithErrorUnlessStatusCode(http.StatusOK),
+		autorest.ByUnmarshallingJSON(&result),
+		autorest.ByClosing())
+	result = autorest.Response{Response: resp}
+	return
 }
