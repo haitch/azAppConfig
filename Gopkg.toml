@@ -22,8 +22,8 @@
 
 
 [[constraint]]
-  name = "github.com/azure/go-autorest"
-  version = "7.3.1"
+  name = "github.com/Azure/go-autorest"
+  version = "12.0.0"
 
 [[constraint]]
   name = "github.com/stretchr/testify"
