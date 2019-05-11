@@ -1,22 +1,70 @@
 package azappconfig
 
 import (
+	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
+	"net/http"
 	"strings"
+	"time"
+
+	"github.com/Azure/go-autorest/autorest"
 )
 
-func getSigningContent(host string, verb string, pathAndQuery string, utcTimestamp string, contentHashBase64 string) string {
-	message := fmt.Sprintf("%s\n%s\n%s;%s;%s", strings.ToUpper(verb), pathAndQuery, utcTimestamp, host, contentHashBase64)
+// HMACAuthorizer implements the bearer authorization
+type HMACAuthorizer struct {
+	KeyID string
+	Key   []byte
+}
+
+// NewHMACAuthorizer crates a BearerAuthorizer using the given token provider
+func NewHMACAuthorizer(id string, key string) *HMACAuthorizer {
+	keyBytes, _ := base64.StdEncoding.DecodeString(key)
+	return &HMACAuthorizer{KeyID: id, Key: keyBytes}
+}
+
+// WithAuthorization returns a PrepareDecorator that adds an HTTP Authorization header whose
+// value is "Bearer " followed by the token.
+//
+// By default, the token will be automatically refreshed through the Refresher interface.
+func (hmacA *HMACAuthorizer) WithAuthorization() autorest.PrepareDecorator {
+	return func(p autorest.Preparer) autorest.Preparer {
+		return autorest.PreparerFunc(func(r *http.Request) (*http.Request, error) {
+			r, _ = p.Prepare(r)
+			timestamp := time.Now().Format(time.RFC1123)
+			contentHashBase64 := getContentHashBase64(r)
+			stringToSign := getSigningContent(r.Host, r.Method, r.URL.Path, timestamp, contentHashBase64)
+			signature := signRequest(stringToSign, hmacA.Key)
+			return autorest.Prepare(
+				r,
+				autorest.WithHeader("Host", r.Host),
+				autorest.WithHeader("x-ms-date", timestamp),
+				autorest.WithHeader("x-ms-content-sha256", contentHashBase64),
+				autorest.WithHeader("Authorization", fmt.Sprintf("HMAC-SHA256 Credential=%s, SignedHeaders=Host;x-ms-date;x-ms-content-sha256, Signature=%s", hmacA.KeyID, signature)),
+			)
+		})
+	}
+}
+
+func getContentHashBase64(r *http.Request) string {
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(r.Body)
+	hasher := sha256.New()
+	hasher.Write(buf.Bytes())
+	return base64.StdEncoding.EncodeToString(hasher.Sum(nil))
+}
+
+func getSigningContent(host string, verb string, pathAndQuery string, timestamp string, contentHashBase64 string) string {
+	message := fmt.Sprintf("%s\n%s\n%s;%s;%s", strings.ToUpper(verb), pathAndQuery, timestamp, host, contentHashBase64)
 	return message
 }
 
-func signRequest(content string, key []byte) []byte {
+func signRequest(content string, key []byte) string {
 	mac := hmac.New(sha256.New, key)
 	mac.Write([]byte(content))
-	signed := mac.Sum(nil)
-	return signed
+	return base64.StdEncoding.EncodeToString(mac.Sum(nil))
 }
 
 func parseAccessKey(accessKeyStr string) accessKey {

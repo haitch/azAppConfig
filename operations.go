@@ -47,7 +47,9 @@ func (client OperationsClient) preparer(ctx context.Context) (*http.Request, err
 	preparer := autorest.CreatePreparer(
 		autorest.AsGet(),
 		autorest.WithBaseURL(client.config.Endpoint),
-		autorest.WithPath("/keys"))
+		autorest.WithPath("/keys"),
+		NewHMACAuthorizer(client.config.ID, client.config.Secret).WithAuthorization(),
+	)
 	return preparer.Prepare((&http.Request{}).WithContext(ctx))
 }
 
