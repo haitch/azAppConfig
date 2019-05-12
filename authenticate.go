@@ -33,16 +33,16 @@ func (hmacA *HMACAuthorizer) WithAuthorization() autorest.PrepareDecorator {
 	return func(p autorest.Preparer) autorest.Preparer {
 		return autorest.PreparerFunc(func(r *http.Request) (*http.Request, error) {
 			r, _ = p.Prepare(r)
-			timestamp := time.Now().Format(time.RFC1123)
+			timestamp := time.Now().UTC().Format(http.TimeFormat)
 			contentHashBase64 := getContentHashBase64(r)
-			stringToSign := getSigningContent(r.Host, r.Method, r.URL.Path, timestamp, contentHashBase64)
+			stringToSign := getSigningContent(r.URL.Host, r.Method, r.URL.Path, timestamp, contentHashBase64)
 			signature := signRequest(stringToSign, hmacA.Key)
+			authStr := fmt.Sprintf("HMAC-SHA256 Credential=%s, SignedHeaders=x-ms-date;host;x-ms-content-sha256, Signature=%s", hmacA.KeyID, signature)
 			return autorest.Prepare(
 				r,
-				autorest.WithHeader("Host", r.Host),
 				autorest.WithHeader("x-ms-date", timestamp),
 				autorest.WithHeader("x-ms-content-sha256", contentHashBase64),
-				autorest.WithHeader("Authorization", fmt.Sprintf("HMAC-SHA256 Credential=%s, SignedHeaders=Host;x-ms-date;x-ms-content-sha256, Signature=%s", hmacA.KeyID, signature)),
+				autorest.WithHeader("Authorization", authStr),
 			)
 		})
 	}
@@ -50,15 +50,16 @@ func (hmacA *HMACAuthorizer) WithAuthorization() autorest.PrepareDecorator {
 
 func getContentHashBase64(r *http.Request) string {
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(r.Body)
+	if r.Body != nil {
+		buf.ReadFrom(r.Body)
+	}
 	hasher := sha256.New()
 	hasher.Write(buf.Bytes())
 	return base64.StdEncoding.EncodeToString(hasher.Sum(nil))
 }
 
 func getSigningContent(host string, verb string, pathAndQuery string, timestamp string, contentHashBase64 string) string {
-	message := fmt.Sprintf("%s\n%s\n%s;%s;%s", strings.ToUpper(verb), pathAndQuery, timestamp, host, contentHashBase64)
-	return message
+	return fmt.Sprintf("%s\n%s\n%s;%s;%s", strings.ToUpper(verb), pathAndQuery, timestamp, host, contentHashBase64)
 }
 
 func signRequest(content string, key []byte) string {
