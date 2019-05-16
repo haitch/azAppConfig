@@ -50,7 +50,7 @@ func (hmacA *HMACAuthorizer) WithAuthorization() autorest.PrepareDecorator {
 
 func getContentHashBase64(r *http.Request) string {
 	buf := new(bytes.Buffer)
-	if r.Body != nil {
+	if r != nil && r.Body != nil {
 		buf.ReadFrom(r.Body)
 	}
 	hasher := sha256.New()
