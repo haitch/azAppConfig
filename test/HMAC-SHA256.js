@@ -38,4 +38,4 @@ return [
 ];
 }
 
-console.log(signRequest("haitchgo.azconfig.io", "GET", "/keys", "Tue, 14 May 2019 07:36:46 GMT", "", "0-l1-s0:Et/0nCwtWNbYBHodqARK", "UQeiC2Ln7XTK11uPHEz5WWIQutoZalP99nZSm8fyWiU="))
+console.log(signRequest("haitchgo.azconfig.io", "GET", "/keys", "Tue, 14 May 2019 07:36:46 GMT", "", "2-l1-s0:XijEoV2A/dcM7LGKwcWP", "Dd7JU24xI8b2SpWpAVtz70AEbc9sWF6nGK9Uqat+fsU="))
