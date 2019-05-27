@@ -12,7 +12,7 @@ const (
 // BaseClient is base client for Azure App Configuration
 type BaseClient struct {
 	autorest.Client
-	config accessKey
+	config *accessKey
 }
 
 // OperationsClient is the Azure App Configuration Client.

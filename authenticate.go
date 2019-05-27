@@ -68,13 +68,14 @@ func signRequest(content string, key []byte) string {
 	return base64.StdEncoding.EncodeToString(mac.Sum(nil))
 }
 
-func parseAccessKey(accessKeyStr string) accessKey {
+func parseAccessKey(accessKeyStr string) *accessKey {
 	kvps := strings.Split(accessKeyStr, ";")
-	result := accessKey{}
+	result := &accessKey{}
 	for _, kvp := range kvps {
-		kv := strings.Split(kvp, "=")
-		k := kv[0]
-		v := kv[1]
+		index := strings.Index(kvp, "=")
+		fmt.Println(index)
+		k := kvp[0:index]
+		v := kvp[index+1:]
 		if strings.EqualFold(k, "Endpoint") {
 			result.Endpoint = v
 		}
