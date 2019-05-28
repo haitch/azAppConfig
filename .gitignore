@@ -1,3 +1,5 @@
+# prevent secrets from environment variable get leaked
+.envrc
 
 # Created by https://www.gitignore.io/api/go
 # Edit at https://www.gitignore.io/?templates=go

@@ -10,6 +10,8 @@ require (
 	github.com/golang/protobuf v1.3.1
 	github.com/grpc-ecosystem/grpc-gateway v1.8.6
 	github.com/hashicorp/golang-lru v0.5.1
+	github.com/onsi/ginkgo v1.8.0
+	github.com/onsi/gomega v1.5.0
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/stretchr/testify v1.3.0
 	go.opencensus.io v0.21.0

@@ -1,17 +1,27 @@
 package azappconfig
 
 import (
-	"context"
 	"fmt"
-	"testing"
+	"context"
+	"os"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-func TestBaseClient(t *testing.T) {
-	client := New("Endpoint=https://haitchgo.azconfig.io;Id=2-l1-s0:XijEoV2A/dcM7LGKwcWP;Secret=Dd7JU24xI8b2SpWpAVtz70AEbc9sWF6nGK9Uqat+fsU=")
-	fmt.Printf("%s\n", client.config.Endpoint)
-	ctx := context.Background()
-	response, err := client.ListKeys(ctx)
-	fmt.Println(err.Error())
-	fmt.Println(response.Status)
-	fmt.Println(response.Header["Www-Authenticate"][0])
-}
+var realConnectionString = os.Getenv("AzAppConfig_ConnectionString")
+
+var _ = Describe("tests End to End scenarios", func() {
+	BeforeEach(func() {
+		if realConnectionString == "" {
+			Skip("real connection string is not set. The end to end test is skipped.")
+		}
+	})
+	It("Test List Keys", func() {
+		client := New(realConnectionString)
+		ctx := context.Background()
+		response, err := client.ListKeys(ctx)
+		Expect(err).To(BeNil())
+		Expect(response.Items).NotTo(BeEmpty())
+		fmt.Printf("%+v", response.Items)
+	})
+})

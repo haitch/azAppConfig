@@ -73,7 +73,6 @@ func parseAccessKey(accessKeyStr string) *accessKey {
 	result := &accessKey{}
 	for _, kvp := range kvps {
 		index := strings.Index(kvp, "=")
-		fmt.Println(index)
 		k := kvp[0:index]
 		v := kvp[index+1:]
 		if strings.EqualFold(k, "Endpoint") {

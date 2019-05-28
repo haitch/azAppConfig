@@ -3,25 +3,29 @@ package azappconfig
 import (
 	"encoding/base64"
 	"fmt"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-func TestParseAccessKey(t *testing.T) {
-	parsed := parseAccessKey("Endpoint=https://haitchgo.azconfig.io;Id=readOnlyKey1;Secret=someKey")
-	assert.Equal(t, "https://haitchgo.azconfig.io", parsed.Endpoint)
-	assert.Equal(t, "readOnlyKey1", parsed.ID)
-	assert.Equal(t, "someKey", parsed.Secret)
-	fmt.Printf("Endpoing=%s;Id=%s;Secret=%s", parsed.Endpoint, parsed.ID, parsed.Secret)
-}
+var _ = Describe("tests Authentication function", func() {
+	It("Test Parsing AccessKey", func() {
+		parsed := parseAccessKey("Endpoint=https://haitchgo.azconfig.io;Id=readOnlyKey1;Secret=aGFpdGEK")
+		Expect(parsed.Endpoint).To(BeEquivalentTo("https://haitchgo.azconfig.io"))
+		Expect(parsed.ID).To(BeEquivalentTo("readOnlyKey1"))
+		Expect(parsed.Secret).To(BeEquivalentTo("aGFpdGEK"))
 
-func TestContentHash(t *testing.T) {
-	parsed := parseAccessKey("Endpoint=https://haitchgo.azconfig.io;Id=2-l1-s0:XijEoV2A/dcM7LGKwcWP;Secret=Dd7JU24xI8b2SpWpAVtz70AEbc9sWF6nGK9Uqat+fsU=")
-	contentHash := getContentHashBase64(nil)
-	fmt.Printf("x-ms-content-sha256 = %s \n", contentHash)
-	stringToSign := getSigningContent("haitchgo.azconfig.io", "GET", "/keys", "Tue, 14 May 2019 07:36:46 GMT", contentHash)
-	key, _ := base64.StdEncoding.DecodeString(parsed.Secret)
-	signature := signRequest(stringToSign, key)
-	fmt.Printf("signature = %s \n", signature)
-}
+		parsed = parseAccessKey("Endpoint=https://example.com;Id=dummyKeyID;Secret=aGFpdGFvCg==")
+		Expect(parsed.Endpoint).To(BeEquivalentTo("https://example.com"))
+		Expect(parsed.ID).To(BeEquivalentTo("dummyKeyID"))
+		Expect(parsed.Secret).To(BeEquivalentTo("aGFpdGFvCg=="))
+	})
+	It("Test content hash", func() {
+		parsed := parseAccessKey("Endpoint=https://haitchgo.azconfig.io;Id=fakeKeyId;Secret=UkVBTExZRkFLRVNFQ1JFVFMK")
+		contentHash := getContentHashBase64(nil)
+		fmt.Printf("x-ms-content-sha256 = %s \n", contentHash)
+		stringToSign := getSigningContent("haitchgo.azconfig.io", "GET", "/keys", "Tue, 14 May 2019 07:36:46 GMT", contentHash)
+		key, _ := base64.StdEncoding.DecodeString(parsed.Secret)
+		signature := signRequest(stringToSign, key)
+		fmt.Printf("signature = %s \n", signature)
+	})
+})

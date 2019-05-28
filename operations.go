@@ -9,8 +9,17 @@ import (
 	"github.com/Azure/go-autorest/tracing"
 )
 
+type ListKeyResponse struct{
+	Items []NamedKey `json:"items"`
+	NextLink string `json:"@nextLink"`
+}
+
+type NamedKey struct {
+	Name string `json:"name"`
+}
+
 // List all app configs
-func (client OperationsClient) ListKeys(ctx context.Context) (result autorest.Response, err error) {
+func (client OperationsClient) ListKeys(ctx context.Context) (result *ListKeyResponse, err error) {
 	if tracing.IsEnabled() {
 		ctx = tracing.StartSpan(ctx, "ListKeys")
 		defer func() {
@@ -62,13 +71,12 @@ func (client OperationsClient) sender(req *http.Request) (*http.Response, error)
 
 // ListResponder handles the response to the List request. The method always
 // closes the http.Response Body.
-func (client OperationsClient) responder(resp *http.Response) (result autorest.Response, err error) {
+func (client OperationsClient) responder(resp *http.Response) (result *ListKeyResponse, err error) {
 	err = autorest.Respond(
 		resp,
 		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
-	result = autorest.Response{Response: resp}
 	return
 }
